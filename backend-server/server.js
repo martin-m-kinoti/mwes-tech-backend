@@ -1,6 +1,5 @@
 ﻿require('dotenv').config();
 const express = require('express');
-const sequelize = require('./db');
 const cors = require('cors');
 require('./mongo');
 const chatRoutes = require('./routes/chat');
@@ -22,12 +21,6 @@ app.use(cors({
 
 // One-off, idempotent cleanups on boot. Orders and payments live in Firebase
 // Data Connect, so nothing migrates locally anymore.
-sequelize
-  .authenticate()
-  .then(() => sequelize.sync())
-  .then(() => console.log('Connected to the database'))
-  .catch((err) => console.error('Database connection error:', err));
-
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     message: 'Successfully connected to the server',
