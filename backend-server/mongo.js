@@ -1,13 +1,26 @@
 const mongoose = require('mongoose');
 
-const mongoUri =
-  process.env.MONGO_URI;
+// Vercel reuses the same process across warm invocations, so the connection is
+// cached globally; handlers await it instead of connecting at import time.
+let cached = global.__mwestechMongo || { conn: null, promise: null };
+global.__mwestechMongo = cached;
 
-mongoose
-  .connect(mongoUri, { serverSelectionTimeoutMS: 5000 })
-  .then(() => console.log('Connected to MongoDB (chat)'))
-  .catch((err) =>
-    console.error('MongoDB connection error:', err.message)
-  );
+async function connectToMongo() {
+  if (cached.conn) return cached.conn;
+  if (!cached.promise) {
+    cached.promise = mongoose
+      .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 })
+      .then((conn) => {
+        cached.conn = conn;
+        console.log('Connected to MongoDB (chat)');
+        return conn;
+      })
+      .catch((err) => {
+        cached.promise = null;
+        throw err;
+      });
+  }
+  return cached.promise;
+}
 
-module.exports = mongoose;
+module.exports = { mongoose, connectToMongo };

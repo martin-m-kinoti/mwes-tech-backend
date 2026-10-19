@@ -1,10 +1,23 @@
 const express = require('express');
 const Message = require('../models/Message');
 const { authenticate } = require('../middleware/auth');
+const { connectToMongo } = require('../mongo');
 
 const router = express.Router();
 
 router.use(authenticate);
+
+// Chat is the only MongoDB-backed feature, so every chat request awaits a
+// connection first (a Vercel cold start may not have one yet).
+router.use(async (_req, res, next) => {
+  try {
+    await connectToMongo();
+    next();
+  } catch (err) {
+    console.error('MongoDB connection error:', err.message);
+    return res.status(500).json({ message: 'Chat storage is unavailable. Please try again.' });
+  }
+});
 
 // List conversations (one per distinct conversationId)
 router.get('/conversations', async (req, res) => {

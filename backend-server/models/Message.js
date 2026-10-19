@@ -1,4 +1,4 @@
-const mongoose = require('../mongo');
+const { mongoose } = require('../mongo');
 
 const messageSchema = new mongoose.Schema(
   {

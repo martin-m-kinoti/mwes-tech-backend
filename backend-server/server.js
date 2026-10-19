@@ -1,7 +1,6 @@
 ﻿require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-require('./mongo');
 const chatRoutes = require('./routes/chat');
 const orderRoutes = require('./routes/orders');
 const assistantRoutes = require('./routes/assistant');
@@ -13,8 +12,14 @@ const { execute, toOrderStatusEnum, normalizeOrder } = require('./config/datacon
 const port = process.env.PORT || 5000;
 const app = express();
 app.use(express.json());
+// FRONTEND_URL may hold several origins (comma-separated); trailing slashes are
+// stripped because the browser Origin header never includes one.
+const FRONTEND_ORIGINS = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/+$/, ''));
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: FRONTEND_ORIGINS,
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -190,6 +195,12 @@ app.get('/api/admin/stats', authenticate, requireRole('admin'), async (req, res)
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+module.exports = app;
+
+// Local development runs `npm start`; on Vercel the app is imported by
+// api/index.js, where listening on a port is not possible.
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+  });
+}
