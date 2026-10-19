@@ -14,7 +14,11 @@ const { execute, toOrderStatusEnum, normalizeOrder } = require('./config/datacon
 const port = process.env.PORT || 5000;
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 // One-off, idempotent cleanups on boot. Orders and payments live in Firebase
 // Data Connect, so nothing migrates locally anymore.
